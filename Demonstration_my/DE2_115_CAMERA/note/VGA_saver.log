@@ -1,0 +1,18 @@
+////////////////////////////////////////////
+SRAM & VGA_saver2 debug log
+20170608:
+(1.) 解決畫面斜斜的問題
+	problem: wrong state transition
+	solution: 由於pixel是偶數個，因此應該要在S_RH回到S_ACTIVE_R，而且該時sram_addr不能加一
+(2.) 解決只存偶數row的問題
+	a. read:
+		problem: 會有怪色點出現
+		diagnoise: 由於色點多分布在顏色變換邊界處，研判是由於RGB有部分讀成鄰近點的值，導致RGB不和諧
+		solution(?): S_RF always goes to S_RH, let S_RH decide whether to goto S_ACT_R or S_IDLE
+					 應該是address部分+1沒有處理好
+	b. write:
+		problem: when to row_valid change?
+		solution: two place
+			1. S_WF: before go back to S_ACT_W
+			   (i.e. iVGA_Read = 0, and iVSYNC_N = 1 ==> row finish, frame not yet)
+			2. S_ACT_W: when iVGA_HSYNC_N negedge

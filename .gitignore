@@ -45,3 +45,13 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+.\Demonstration_my\DE2_115\db\
+*.kpt
+*.tdf
+*.cdb
+*.hdb
+*.qmsg
+*.rdb
+*.ddb
+*.bpm
+*.idb

@@ -1,0 +1,2 @@
+Warning (10273): Verilog HDL warning at VGA_saver2.v(113): extended using "x" or "z"
+Warning (10273): Verilog HDL warning at Sdram_Control.v(333): extended using "x" or "z"
