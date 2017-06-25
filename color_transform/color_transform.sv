@@ -6,7 +6,6 @@
 
 module color_transform (
 	input clk,    // Clock
-	input clk_en, // Clock Enable
 	input rst_n,  // Asynchronous reset active low
 	input start_transform,
 
@@ -205,6 +204,58 @@ module color_transform (
 			end
 			default : /* default */;
 		endcase
+	end
+
+	always_ff @(posedge clk or negedge rst_n) begin
+		if(~rst_n) begin
+			// l
+			l_s_sum_r   <= 0;
+			l_t_sum_r   <= 0;
+			l_s_std2_r  <= 0;
+			l_t_std2_r  <= 0;
+			l_s_std     <= 0;
+			// a
+			a_s_sum_r   <= 0;
+			a_t_sum_r   <= 0;
+			a_s_std2_r  <= 0;
+			a_t_std2_r  <= 0;
+			a_s_std     <= 0;
+			// b
+			b_s_sum_r   <= 0;
+			b_t_sum_r   <= 0;
+			b_s_std2_r  <= 0;
+			b_t_std2_r  <= 0;
+			b_s_std     <= 0;
+			//
+			now_photo_r <= 0;
+			state_r     <= 0;
+			address_r   <= 0;
+			buffer_r	<= 0;
+		end else begin
+			// l
+			l_s_sum_r   <= l_s_sum_w;
+			l_t_sum_r   <= l_t_sum_w;
+			l_s_std2_r  <= l_s_std2_w;
+			l_t_std2_r  <= l_t_std2_w;
+			l_s_std     <= l_t_std;
+			// a
+			a_s_sum_r   <= a_s_sum_w;
+			a_t_sum_r   <= a_t_sum_w;
+			a_s_std2_r  <= a_s_std2_w;
+			a_t_std2_r  <= a_t_std2_w;
+			a_s_std     <= a_t_std;
+			// b
+			b_s_sum_r   <= b_s_sum_w;
+			b_t_sum_r   <= b_t_sum_w;
+			b_s_std2_r  <= b_s_std2_w;
+			b_t_std2_r  <= b_t_std2_w;
+			b_s_std     <= b_t_std;
+			//
+			now_photo_r <= now_photo_w;
+			state_r		<= state_w;
+			address_r	<= address_w;
+			buffer_r	<= buffer_w;
+		end
 	end
 
 endmodule
