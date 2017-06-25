@@ -1,6 +1,6 @@
 function RES = colorTransfer_16b(SRC, TRG, b)
 
-
+fprintf('now at colorTransfer_16b');
 % Convert SRC(source) and TRG(target) 
 %from (RGB) domain to (L, alpha, beta) domain:
 LAB_SRC = rgb2lab(SRC);
@@ -34,5 +34,5 @@ RES(:, :, 3) = double(bo);
 % RES = [Lo; ao; bo];
 RES = lab2rgb(RES);
 % RES = laab2rgb(RES);
-
+fprintf('exit colorTransfer_16b');
 end
