@@ -14,6 +14,7 @@ reg [12:0] fraction; //小數部分 13bits
 assign o_log2_index = {integ, fraction};
 
 always @(*) begin
+<<<<<<< HEAD
 	if(!i_rst) integ = 0;
 	else if(i_index > 7 && i_index < 16) integ = 3;
 	else if(i_index > 15 && i_index < 32) integ = 4;
@@ -21,11 +22,22 @@ always @(*) begin
 	else if(i_index > 63 && i_index < 128) integ = 6;
 	else if(i_index > 127 && i_index < 256) integ = 7;
 	else integ = 0;
+=======
+	if(i_rst) int = 0;
+	else if(i_index > 1 && i_index < 4) int = 1;
+	else if(i_index > 3 && i_index < 8) int = 2;
+	else if(i_index > 7 && i_index < 16) int = 3;
+	else if(i_index > 15 && i_index < 32) int = 4;
+	else if(i_index > 31 && i_index < 64) int = 5;
+	else if(i_index > 63 && i_index < 128) int = 6;
+	else if(i_index > 127 && i_index < 256) int = 7;
+	else int = 0;
+>>>>>>> origin/master
 end
 
 
 always @(*) begin
-	if(!i_rst) begin
+	if(i_rst) begin
 		fraction = 0;
 	end	else begin
 		case(i_index)
