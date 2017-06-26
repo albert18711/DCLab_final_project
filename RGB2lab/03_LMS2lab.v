@@ -36,6 +36,10 @@ module LMS2lab(
 	reg signed [32:0] reg_a;
 	reg signed [32:0] reg_b;
 
+	reg signed [32:0] temp_l;
+	reg signed [32:0] temp_a;
+	reg signed [32:0] temp_b;
+
 //====== assign =============================
 	//matrix2 3+13 B
 
@@ -60,15 +64,46 @@ module LMS2lab(
 //====== combinational circuit ==============
 always@(*) begin
 	if(i_rst) begin
-		reg_l = 0;
-		reg_a = 0;
-		reg_b = 0;
+		temp_l = 0;
+		temp_a = 0;
+		temp_b = 0;
 	end else begin
-		reg_l = $signed(matrix11)*$signed(logL) + $signed(matrix12)*$signed(logM) + $signed(matrix13)*$signed(logS);
-		reg_a = $signed(matrix21)*$signed(logL) + $signed(matrix22)*$signed(logM) + $signed(matrix23)*$signed(logS);
-		reg_b = $signed(matrix31)*$signed(logL) + $signed(matrix32)*$signed(logM) + $signed(matrix33)*$signed(logS);
+		temp_l = $signed(matrix11)*$signed(logL) + $signed(matrix12)*$signed(logM) + $signed(matrix13)*$signed(logS);
+		temp_a = $signed(matrix21)*$signed(logL) + $signed(matrix22)*$signed(logM) + $signed(matrix23)*$signed(logS);
+		temp_b = $signed(matrix31)*$signed(logL) + $signed(matrix32)*$signed(logM) + $signed(matrix33)*$signed(logS);
 	end
 end
+
+always @(*) begin //debug
+	if(i_rst) begin
+		reg_l = 0;
+	end else if(temp_l[32] == 1) begin
+		reg_l = 0;
+	end else begin
+		reg_l = temp_l;
+	end
+end
+
+always @(*) begin //debug
+	if(i_rst) begin
+		reg_a = 0;
+	end else if(temp_a[32] == 1) begin
+		reg_a = 0;
+	end else begin
+		reg_a = temp_a;
+	end
+end
+
+always @(*) begin //debug
+	if(i_rst) begin
+		reg_b = 0;
+	end else if(temp_b[32] == 1) begin
+		reg_b = 0;
+	end else begin
+		reg_b = temp_b;
+	end
+end
+
 
 //====== sequential circuit =================
 
