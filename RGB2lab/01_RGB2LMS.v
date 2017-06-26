@@ -47,9 +47,9 @@ module RGB2LMS(
 	assign matrix32 = 16'b0000010000011111;
 	assign matrix33 = 16'b0001101100000101;
 	
-	assign o_L = reg_L[21:6]; //取 8B + 8B
-	assign o_M = reg_M[21:6];
-	assign o_S = reg_S[21:6];
+	assign o_L = reg_L[20:5]; //取 8B + 8B
+	assign o_M = reg_M[20:5];
+	assign o_S = reg_S[20:5];
 	
 //====== combinational circuit ==============
 always@(*) begin
