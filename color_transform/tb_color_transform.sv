@@ -14,7 +14,10 @@ module tb_color_transform;
 	logic sram_oe_n;
 	logic sram_we_n;
 	logic [19:0] sram_addr;
-	logic [15:0] sram_data;
+	wire  [15:0] sram_data;
+	logic [1:0] store_g;
+
+	logic store_state;
 
 	enum {S_INPUT, S_OUTPUT} state_r, state_w;
 	logic [15:0] data_to_sram;
@@ -25,18 +28,19 @@ module tb_color_transform;
 			.start_transform(start),
 
 			// Constant parameter/////
-			.iCol_Max(400),
-			.iRow_Max(300),
+			.iCol_Max(10'd40),
+			.iRow_Max(10'd30),
 
 			// SRAM side ///////
 			.oSRAM_OE_N(sram_oe_n),
 			.oSRAM_WE_N(sram_we_n),
 			.oSRAM_ADDR(sram_addr),
-			.oSRAM_DATA(sram_data)
+			.oSRAM_DATA(sram_data),
+			.oStore_g(store_g)
 		);
 
 	assign sram_data = (sram_we_n)? data_to_sram : 16'bz;
-	assign data_to_sram = (sram_addr > 300*400*2)? 3 : {sram_addr[7:1], sram_addr[7:1]};
+	assign data_to_sram = (sram_addr > 30*40*2)? {8'd2, 8'd2} : {8'd1, 8'd1};
 
 	// always_comb begin
 	// 	state_w = state_r;
@@ -53,14 +57,39 @@ module tb_color_transform;
 	
 	// end
 
+	// initial begin
+	// 	#(SIM_TIME*CLK)
+	// 	$finish;
+	// end
+
 	initial begin
-		#(SIM_TIME*CLK)
-		$finish;
+		$fsdbDumpfile("colorTransform_tb.fsdb");
+	   	$fsdbDumpvars;
+
+		rst_n = 0;
+		start = 0;
+		#(2*CLK)
+		rst_n = 1;
+		start = 1;
+		#(CLK)
+		start = 0;
 	end
 
-	always_ff @(posedge clk) begin
+	always_ff @(posedge clk or negedge rst_n) begin
 		if(~sram_we_n) begin
-			$display("color_transform of addr = %d, result = %d", sram_addr, sram_data);
+			$display("color_transform of addr = %d, result = %h", sram_addr, sram_data);
+		end
+		if(sram_addr > 30 * 40 * 2 * 3 + 4) begin
+			$finish;
+		end
+		if(~rst_n) begin
+			store_state <= 0;
+		end else begin
+			if(~store_state) begin
+				if(store_g > 0) store_state <= 1;
+			end else begin
+				if(store_g == 0) $finish;
+			end			
 		end
 	end
 

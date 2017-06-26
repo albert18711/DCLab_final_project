@@ -10,7 +10,7 @@ src_mean_f = sfi(src_mean, 16, 8)
 
 trg_mean = sum(sum(CHt));
 % trg_mean = floor(trg_mean*256)/256;
-trg_mean = trg_mean/(size(CHs,1)*size(CHs,2));
+trg_mean = trg_mean/(size(CHt,1)*size(CHt,2));
 trg_mean_f = sfi(trg_mean, 16, 8)
 % trg_mean = trg_mean/(size(CHt,1)*size(CHt, 2));
 % trg_mean = trg_mean_f/sfi(size(CHt,1)*size(CHt, 2), 16, 8);

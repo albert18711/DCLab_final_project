@@ -4,6 +4,11 @@
 // reshape the color distribution of photo 0 to be like photo 1
 // i.e. transform photo 0's color to photo 1's
 
+// `include "sqrt.v"
+// `include "simple_root.sv"
+`include "sqrt_32.sv"
+`include "main_RGB2lab.v"
+
 module color_transform (
 	input clk,    // Clock
 	input rst_n,  // Asynchronous reset active low
@@ -15,71 +20,96 @@ module color_transform (
 
 
 	// SRAM side ///////
-	output oSRAM_OE_N,
-	output oSRAM_WE_N,
-	output oSRAM_ADDR,
-	inout  oSRAM_DATA
+	output reg oSRAM_OE_N,
+	output reg oSRAM_WE_N,
+	output reg [19:0] oSRAM_ADDR,
+	inout  [15:0] oSRAM_DATA,
+
+	// debug
+	output [1:0] oStore_g
+	// output state,
+	// output now_photo
 );
 
 	logic [15:0] sram_wdata;
 
 	logic [19:0] address_r, address_w;
 
+	logic [47:0] lab;
+
 	// static result store
 	//// l
-	logic [15:0] l_s_sum_r,  l_s_sum_w
-	logic [15:0] l_t_sum_r,  l_t_sum_w;
-	logic [15:0] l_s_mean,   l_t_mean;
-	logic [15:0] l_s_dif2,   l_t_dif2;
-	logic [15:0] l_s_std2_r, l_s_std2_w;
-	logic [15:0] l_t_std2_r, l_t_std2_w;
-	logic [15:0] l_s_std,    l_t_std;
+	logic signed [15:0] l_s, l_t;
+	logic signed [31:0] l_s_sum_r,  l_s_sum_w;
+	logic signed [31:0] l_t_sum_r,  l_t_sum_w;
+	logic signed [31:0] l_s_mean,   l_t_mean;
+	logic signed [31:0] l_s_dif2,   l_t_dif2;
+	logic signed [31:0] l_s_std2_r, l_s_std2_w;
+	logic signed [31:0] l_t_std2_r, l_t_std2_w;
+	logic signed [15:0] l_s_std,    l_t_std;
+	logic signed [15:0] l_trs;
 	//// a
-	logic [15:0] a_s_sum_r,  a_s_sum_w
-	logic [15:0] a_t_sum_r,  a_t_sum_w;
-	logic [15:0] a_s_mean,   a_t_mean;
-	logic [15:0] a_s_dif2,   a_t_dif2;
-	logic [15:0] a_s_std2_r, a_s_std2_w;
-	logic [15:0] a_t_std2_r, a_t_std2_w;
-	logic [15:0] a_s_std,    a_t_std;
+	logic signed [15:0] a_s, a_t;
+	logic signed [31:0] a_s_sum_r,  a_s_sum_w;
+	logic signed [31:0] a_t_sum_r,  a_t_sum_w;
+	logic signed [31:0] a_s_mean,   a_t_mean;
+	logic signed [31:0] a_s_dif2,   a_t_dif2;
+	logic signed [31:0] a_s_std2_r, a_s_std2_w;
+	logic signed [31:0] a_t_std2_r, a_t_std2_w;
+	logic signed [15:0] a_s_std,    a_t_std;
+	logic signed [15:0] a_trs;
 	//// b
-	logic [15:0] b_s_sum_r,  b_s_sum_w
-	logic [15:0] b_t_sum_r,  b_t_sum_w;
-	logic [15:0] b_s_mean,   b_t_mean;
-	logic [15:0] b_s_dif2,   b_t_dif2;
-	logic [15:0] b_s_std2_r, b_s_std2_w;
-	logic [15:0] b_t_std2_r, b_t_std2_w;
-	logic [15:0] b_s_std,    b_t_std;
-	//// b
-	logic [15:0] g_s_sum_r,  g_s_sum_w
-	logic [15:0] g_t_sum_r,  g_t_sum_w;
-	logic [15:0] g_s_mean,   g_t_mean;
-	logic [15:0] g_s_dif2,   g_t_dif2;
-	logic [15:0] g_s_std2_r, g_s_std2_w;
-	logic [15:0] g_t_std2_r, g_t_std2_w;
-	logic [15:0] g_s_std,    g_t_std;
-
+	logic signed [15:0] b_s, b_t;
+	logic signed [31:0] b_s_sum_r,  b_s_sum_w;
+	logic signed [31:0] b_t_sum_r,  b_t_sum_w;
+	logic signed [31:0] b_s_mean,   b_t_mean;
+	logic signed [31:0] b_s_dif2,   b_t_dif2;
+	logic signed [31:0] b_s_std2_r, b_s_std2_w;
+	logic signed [31:0] b_t_std2_r, b_t_std2_w;
+	logic signed [15:0] b_s_std,    b_t_std;
+	logic signed [15:0] b_trs;
+	//// g
+	logic signed [15:0] g_s, g_t;
+	logic signed [31:0] g_s_sum_r,  g_s_sum_w;
+	logic signed [31:0] g_t_sum_r,  g_t_sum_w;
+	logic signed [31:0] g_s_mean,   g_t_mean;
+	logic signed [31:0] g_s_dif2,   g_t_dif2;
+	logic signed [31:0] g_s_std2_r, g_s_std2_w;
+	logic signed [31:0] g_t_std2_r, g_t_std2_w;
+	logic signed [15:0] g_s_std,    g_t_std;
+ signed
 	// logic [19:0] now_photo_start_r, now_photo_start_w;
 
 	logic [31:0] buffer_r, buffer_w;
 
 	logic [1:0]  store_g_r, store_g_w;
 
-	enum STATE{S_IDLE, S_HALF_PRE, S_FULL_PRE, S_WRITE_RES} state_r, state_w;
-	enum PHOTO_TYPE{SOURCE, TARGET} now_photo_r, now_photo_w;
+	enum {S_IDLE, S_HALF_R, S_PRE_R, S_FULL_R, S_HALF_W, S_FULL_W} state_r, state_w;
+	enum {SOURCE, TARGET, STD_S, STD_T, OUTPUT} now_photo_r, now_photo_w;
 
-	parameter PHOTO_SIZE = iCol_Max * iRow_Max;
+	logic sqrt_rst;
+	logic sqrt_rst_r, sqrt_rst_w;
+	logic [1:0] sqrt_counter_r, sqrt_counter_w;
 
+	logic [31:0] PHOTO_SIZE;
+	assign PHOTO_SIZE = iCol_Max * iRow_Max;
+
+	assign oStore_g = store_g_r;
+	// assign state = state_r;
+	// assign now_photo = now_photo_r;
+
+	assign oSRAM_ADDR = address_r;
 	assign oSRAM_DATA = (oSRAM_WE_N)? 16'bz : sram_wdata;
 
-	assign l_s = lab[23:16];
-	assign a_s = lab[16:8];
-	assign b_s = lab[7:0];
-	assign g_s = buffer_r[7:0];
-	assign l_t = lab[23:16];
-	assign a_t = lab[16:8];
-	assign b_t = lab[7:0];
-	assign g_t = buffer_r[7:0];
+	// transform lab to 16'b, 8' fraction
+	assign l_s = lab[47:32] >> 5;
+	assign a_s = lab[31:16] >> 5;
+	assign b_s = lab[15:0]  >> 5;
+	assign g_s = {buffer_r[7:0], 8'b0};
+	assign l_t = lab[47:32] >> 5;
+	assign a_t = lab[31:16] >> 5;
+	assign b_t = lab[15:0]  >> 5;
+	assign g_t = {buffer_r[7:0], 8'b0};
 
 	assign l_s_mean  = (l_s_sum_r << 8) / PHOTO_SIZE;
 	assign l_s_dif2  = ((l_s << 8) - l_s_mean) ** 2 / PHOTO_SIZE;
@@ -99,22 +129,30 @@ module color_transform (
 	assign g_t_mean  = (g_t_sum_r << 8) / PHOTO_SIZE;
 	assign g_t_dif2  = ((g_t << 8) - g_t_mean) ** 2 / PHOTO_SIZE;
 
-	SQRT rootls (.CLK(clk), .RST(~rst_n), .DATA_IN(l_s_std2_r), .DATA_OUT(l_s_std) );
-	SQRT rootas (.CLK(clk), .RST(~rst_n), .DATA_IN(a_s_std2_r), .DATA_OUT(a_s_std) );
-	SQRT rootbs (.CLK(clk), .RST(~rst_n), .DATA_IN(b_s_std2_r), .DATA_OUT(b_s_std) );
+	assign sqrt_rst = sqrt_rst_r;
 
-	SQRT rootlt (.CLK(clk), .RST(~rst_n), .DATA_IN(l_t_std2_r), .DATA_OUT(l_t_std) );
-	SQRT rootat (.CLK(clk), .RST(~rst_n), .DATA_IN(a_t_std2_r), .DATA_OUT(a_t_std) );
-	SQRT rootbt (.CLK(clk), .RST(~rst_n), .DATA_IN(b_t_std2_r), .DATA_OUT(b_t_std) );
+	logic root_ready_ls, root_ready_as, root_ready_bs;
+	logic root_ready_lt, root_ready_at, root_ready_bt;
+	logic root_ready;
+	assign root_ready = (root_ready_ls & root_ready_as & root_ready_bs &
+						 root_ready_lt & root_ready_at & root_ready_bt );
 
-	main_RGB2lab rgb2lab (
-		.i_rst(~rst_n),
+	sqrt32 rootls (.clk(clk), .rdy(root_ready_ls), .reset(sqrt_rst), .x(l_s_std2_r), .y(l_s_std));
+	sqrt32 rootla (.clk(clk), .rdy(root_ready_as), .reset(sqrt_rst), .x(a_s_std2_r), .y(a_s_std));
+	sqrt32 rootlb (.clk(clk), .rdy(root_ready_bs), .reset(sqrt_rst), .x(b_s_std2_r), .y(b_s_std));
+
+	sqrt32 rootts (.clk(clk), .rdy(root_ready_lt), .reset(sqrt_rst), .x(l_t_std2_r), .y(l_t_std));
+	sqrt32 rootta (.clk(clk), .rdy(root_ready_at), .reset(sqrt_rst), .x(a_t_std2_r), .y(a_t_std));
+	sqrt32 roottb (.clk(clk), .rdy(root_ready_bt), .reset(sqrt_rst), .x(b_t_std2_r), .y(b_t_std));
+
+	RGB2lab rgb2lab (
+		.i_rst(rst_n),
 		.i_R(buffer_r[31:24]),
 		.i_G(buffer_r[23:16]),
 		.i_B(buffer_r[15:8]),
-		.o_l(lab[23:16]),
-		.o_a(lab[15:8]),
-		.o_b(lab[7:0])
+		.o_l(lab[47:32]),
+		.o_a(lab[31:16]),
+		.o_b(lab[15:0])
 		);
 
 	assign l_trs = (l_s - l_s_mean) * l_t_std / l_s_std + l_t_mean;
@@ -131,6 +169,9 @@ module color_transform (
 		oSRAM_WE_N = 1;
 		oSRAM_OE_N = 1;
 		store_g_w = store_g_r;
+		sqrt_rst_w = 0;
+		sram_wdata = 0;
+		// sqrt_counter_w = sqrt_counter_r;
 
 		// s
 		l_s_sum_w = l_s_sum_r;
@@ -157,12 +198,17 @@ module color_transform (
 		case (state_r)
 			S_IDLE: begin
 				if(start_transform) begin
-					state_w = S_HALF_PRE;
+					state_w = S_HALF_R;
 					address_w = 0; // start with photo num 0
 					oSRAM_OE_N = 0;
 					oSRAM_WE_N = 1;
 					now_photo_w = SOURCE;
 				end
+			end
+			S_PRE_R:  begin
+				oSRAM_OE_N = 0;
+				oSRAM_WE_N = 1;
+				state_w = S_HALF_R;
 			end
 			S_HALF_R: begin
 				state_w = S_FULL_R;
@@ -173,15 +219,15 @@ module color_transform (
 				// NOTICE: for the first half, buffer_r should be 0
 				case (now_photo_r)
 					SOURCE: begin
-						l_s_sum_w = l_s_sum_r + lab[23:16];
-						a_s_sum_w = a_s_sum_r + lab[15:8];
-						b_s_sum_w = b_s_sum_r + lab[7:0];
+						l_s_sum_w = l_s_sum_r + lab[47:32];
+						a_s_sum_w = a_s_sum_r + lab[31:16];
+						b_s_sum_w = b_s_sum_r + lab[15:0];
 						g_s_sum_w = g_s_sum_r + buffer_r[7:0];
 					end
 					TARGET: begin
-						l_t_sum_w = l_t_sum_r + lab[23:16];
-						a_t_sum_w = a_t_sum_r + lab[15:8];
-						b_t_sum_w = b_t_sum_r + lab[7:0];
+						l_t_sum_w = l_t_sum_r + lab[47:32];
+						a_t_sum_w = a_t_sum_r + lab[31:16];
+						b_t_sum_w = b_t_sum_r + lab[15:0];
 						g_t_sum_w = g_t_sum_r + buffer_r[7:0];
 					end
 					STD_S: begin
@@ -230,6 +276,7 @@ module color_transform (
 						state_w = S_HALF_R;
 						if( address_r == PHOTO_SIZE * 2 + 1) begin
 							now_photo_w = STD_T;
+							// address_w = 0;
 						end						
 					end
 					STD_T: begin
@@ -239,14 +286,16 @@ module color_transform (
 						state_w = S_HALF_R;
 						if( address_r == PHOTO_SIZE * 4 + 1) begin
 							now_photo_w = OUTPUT;
+							// sqrt_rst_w = 0;
 							address_w = 0;
 						end						
 					end
 					OUTPUT: begin
-						oSRAM_WE_N = 0;
-						oSRAM_OE_N = 1;
+						oSRAM_WE_N = 1;
+						oSRAM_OE_N = 0;
 						address_w = address_r + PHOTO_SIZE * 4 - 1;
 						state_w = S_HALF_W;
+						sqrt_rst_w = 1;
 						if(address_r == PHOTO_SIZE * 6 + 1) begin
 							// state_w = S_IDLE;
 							// address_w = 0;
@@ -259,32 +308,70 @@ module color_transform (
 				endcase
 			end
 			S_HALF_W: begin
-				sram_wdata = {l_trs, a_trs};
-				oSRAM_WE_N = 0;
-				oSRAM_OE_N = 1;
-				address_w = address_r + 1;
-				if(store_g_r == 1) begin
-					sram_wdata = g_s_mean;
-				end else if(store_g_r == 2) begin
-					sram_wdata = g_t_mean;
+				// sram_wdata = {l_trs, a_trs};
+				// state_w = S_FULL_W;
+				// oSRAM_WE_N = 0;
+				// oSRAM_OE_N = 1;
+				// address_w = address_r + 1;
+				// sqrt_counter_w = 0;
+				// if(store_g_r == 1) begin
+				// 	sram_wdata = g_s_mean;
+				// end else if(store_g_r == 2) begin
+				// 	sram_wdata = g_t_mean;
+				// end
+				if(root_ready) begin
+					state_w = S_FULL_W;
+					oSRAM_WE_N = 0;
+					oSRAM_OE_N = 1;
+					address_w = address_r + 1;
+					sqrt_rst_w = 1;
+					// sqrt_counter_w = 0;
+					if(store_g_r == 1) begin
+						sram_wdata = g_s_mean;
+					end else if(store_g_r == 2) begin
+						sram_wdata = g_t_mean;
+					end else begin
+						sram_wdata = {l_trs, a_trs};
+					end
 				end
 			end
 			S_FULL_W: begin
-				sram_wdata = {b_trs, g_trs};
-				state_w = S_HALF_R;
-				oSRAM_WE_N = 0;
-				oSRAM_OE_N = 1;
-				address_w = address_r - PHOTO_SIZE * 4 + 1;
-				if(store_g_r == 1) begin
-					sram_wdata = g_s_std;
-					store_g_w = store_g_r + 1; // 1 + 1 = 2
-				end else if(store_g_r == 2) begin
-					sram_wdata = g_t_mean;
-					store_g_w = 0;
-					state_w = S_IDLE;
+				// sram_wdata = {b_trs, 8'b0};
+				// state_w = S_PRE_R;
+				// oSRAM_WE_N = 0;
+				// oSRAM_OE_N = 1;
+				// address_w = address_r - PHOTO_SIZE * 4 + 1;
+				// sqrt_counter_w = 0;
+				// if(store_g_r == 1) begin
+				// 	sram_wdata = g_s_std;
+				// 	store_g_w = store_g_r + 1; // 1 + 1 = 2
+				// end else if(store_g_r == 2) begin
+				// 	sram_wdata = g_t_mean;
+				// 	store_g_w = 0;
+				// 	state_w = S_IDLE;
+				// 	oSRAM_OE_N = 1;
+				// 	oSRAM_WE_N = 1;
+				// 	address_w = 0;
+				// end
+				if(root_ready) begin
+					state_w = S_PRE_R;
+					oSRAM_WE_N = 0;
 					oSRAM_OE_N = 1;
-					oSRAM_WE_N = 1;
-					address_w = 0;
+					address_w = address_r - PHOTO_SIZE * 4 + 1;
+					// sqrt_counter_w = 0;
+					if(store_g_r == 1) begin
+						sram_wdata = g_s_std;
+						store_g_w = store_g_r + 1; // 1 + 1 = 2
+					end else if(store_g_r == 2) begin
+						sram_wdata = g_t_mean;
+						store_g_w = 0;
+						state_w = S_IDLE;
+						oSRAM_OE_N = 1;
+						oSRAM_WE_N = 1;
+						address_w = 0;
+					end else begin
+						sram_wdata = {b_trs, 8'b0};
+					end
 				end
 			end
 			default : /* default */;
@@ -309,11 +396,13 @@ module color_transform (
 			b_s_std2_r  <= 0;
 			b_t_std2_r  <= 0;
 			//
-			now_photo_r <= 0;
-			state_r     <= 0;
+			now_photo_r <= SOURCE;
+			state_r     <= S_IDLE;
 			address_r   <= 0;
 			buffer_r	<= 0;
 			store_g_r   <= 0;
+			sqrt_rst_r  <= 0;
+			// sqrt_counter_r <= 0;
 		end else begin
 			// l
 			l_s_sum_r   <= l_s_sum_w;
@@ -336,6 +425,8 @@ module color_transform (
 			address_r	<= address_w;
 			buffer_r	<= buffer_w;
 			store_g_r	<= store_g_w;
+			sqrt_rst_r	<= sqrt_rst_w;
+			// sqrt_counter_r <= sqrt_counter_w;
 		end
 	end
 

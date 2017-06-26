@@ -29,7 +29,7 @@ wire [15:0] log2_L, log2_M, log2_S; // 3+13 B
 
 //====== submodule ==========================
 
-step1 RGB2LMS(
+RGB2LMS step1(
 	.i_rst(i_rst),
 	.i_R(i_R),
 	.i_G(i_G),
@@ -39,25 +39,25 @@ step1 RGB2LMS(
 	.o_S(wire_S)
 );
 
-step2_log2L log2(
+log2 step2_log2L(
 	.i_rst(i_rst),
 	.i_index(wire_L),
 	.o_log2_index(log2_L)
 );
 
-step2_log2M log2(
+log2 step2_log2M(
 	.i_rst(i_rst),
 	.i_index(wire_M),
 	.o_log2_index(log2_M)
 );
 
-step2_log2S log2(
+log2 step2_log2S(
 	.i_rst(i_rst),
 	.i_index(wire_S),
 	.o_log2_index(log2_S)
 );
 
-step3 LMS2lab(
+LMS2lab step3(
 	.i_rst(i_rst),
 	.i_logL(log2_L),
 	.i_logM(log2_M),

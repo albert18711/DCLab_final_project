@@ -56,3 +56,8 @@ Temporary Items
 *.bpm
 *.idb
 *.ps
+*.db_info
+Demonstration_my/DE2_115_CAMERA/db/DE2_115_CAMERA.db_info
+Demonstration_my/DE2_115_CAMERA/db/DE2_115_CAMERA.quiproj.924.rdr.flock
+color_transform/sqrt_32.vhdl.bak
+*.db_info
