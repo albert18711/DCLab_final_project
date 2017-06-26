@@ -1,6 +1,6 @@
-`include "RGB2LMS.v"
-`include "log2_LMS.v"
-`include "LMS2lab.v"
+`include "01_RGB2LMS.v"
+`include "02_log2_LMS.v"
+`include "03_LMS2lab.v"
 
 module RGB2lab(
 	i_rst,
