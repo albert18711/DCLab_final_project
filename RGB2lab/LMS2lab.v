@@ -53,7 +53,7 @@ module LMS2lab(
 	
 //====== combinational circuit ==============
 always@(*) begin
-	if(!i_rst) begin
+	if(i_rst) begin
 		reg_l = 0;
 		reg_a = 0;
 		reg_b = 0;

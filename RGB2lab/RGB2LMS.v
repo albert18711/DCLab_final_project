@@ -53,7 +53,7 @@ module RGB2LMS(
 	
 //====== combinational circuit ==============
 always@(*) begin
-	if(!i_rst) begin
+	if(i_rst) begin
 		reg_L = 0;
 		reg_M = 0;
 		reg_S = 0;
