@@ -1,13 +1,12 @@
 module AC1C22RGB(
 	input i_rst,
-	
-	output [7:0] o_R, // 8 B
-	output [7:0] o_G,
-	output [7:0] o_B,
-	
 	input [31:0] i_A, // 16+16 B
 	input [31:0] i_C1,
-	input [31:0] i_C2
+	input [31:0] i_C2,
+	output [7:0] o_R, // 8 B
+	output [7:0] o_G,
+	output [7:0] o_B
+
 );
 
 
@@ -57,16 +56,17 @@ end
 always_comb begin
 	if(i_rst) begin
 		reg_R = 0;
-	end else if(temp_R[24] == 1) begin
+	end else if(temp_R[47] == 1) begin
 		reg_R = 0;
 	end else begin
 		reg_R = temp_R;
+	end
 end
 
 always_comb begin
 	if(i_rst) begin
 		reg_G = 0;
-	end else if(temp_G[24] == 1) begin
+	end else if(temp_G[47] == 1) begin
 		reg_G = 0;
 	end else begin
 		reg_G = temp_G;
@@ -76,7 +76,7 @@ end
 always_comb begin
 	if(i_rst) begin
 		reg_B = 0;
-	end else if(temp_B[24] == 1) begin
+	end else if(temp_B[47] == 1) begin
 		reg_B = 0;
 	end else begin
 		reg_B = temp_B;

@@ -36,9 +36,9 @@ module RGB2AC1C2(
 	assign matrix32 = 16'b0000001110101110;
 	assign matrix33 = 16'b1111101001111001;
 
-	assign o_A = {4'b0, reg_A, 3'b0};
-	assign o_C1 = {4'b0, reg_C1, 3'b0};
-	assign o_C2 = {4'b0, reg_C2, 3'b0};
+	assign o_A = {reg_A[24], reg_A[24], reg_A[24], reg_A[24], reg_A, 3'b0};
+	assign o_C1 = {reg_C1[24], reg_C1[24], reg_C1[24], reg_C1[24], reg_C1, 3'b0};
+	assign o_C2 = {reg_C2[24], reg_C2[24], reg_C2[24], reg_C2[24], reg_C2, 3'b0};
 	
 //====== combinational circuit ==============
 
@@ -48,9 +48,9 @@ always_comb begin
 		reg_C1 = 0;
 		reg_C2 = 0;
 	end else begin
-		reg_A = $signed(matrix11)*$signed(i_R)+$signed(matrix12)*$signed(i_G)+$signed(matrix13)*$signed(i_B);
-		reg_C1 = $signed(matrix21)*$signed(i_R)+$signed(matrix22)*$signed(i_G)+$signed(matrix23)*$signed(i_B);
-		reg_C2 = $signed(matrix31)*$signed(i_R)+$signed(matrix32)*$signed(i_G)+$signed(matrix33)*$signed(i_B);
+		reg_A = $signed(matrix11)*$signed({1'b0, i_R})+$signed(matrix12)*$signed({1'b0, i_G})+$signed(matrix13)*$signed({1'b0, i_B});
+		reg_C1 = $signed(matrix21)*$signed({1'b0, i_R})+$signed(matrix22)*$signed({1'b0, i_G})+$signed(matrix23)*$signed({1'b0, i_B});
+		reg_C2 = $signed(matrix31)*$signed({1'b0, i_R})+$signed(matrix32)*$signed({1'b0, i_G})+$signed(matrix33)*$signed({1'b0, i_B});
 	end
 end
 
