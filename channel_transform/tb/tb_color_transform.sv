@@ -40,7 +40,7 @@ module tb_color_transform;
 		);
 
 	assign sram_data = (sram_we_n)? data_to_sram : 16'bz;
-	assign data_to_sram = (sram_addr > 30*40*2)? {8'd2, 8'd2} : {8'd1, 8'd1};
+	assign data_to_sram = (sram_addr > 30*40*2)? {8'd64, 8'd64} : {8'd64, 8'd64};
 
 	// always_comb begin
 	// 	state_w = state_r;

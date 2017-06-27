@@ -32,7 +32,9 @@ module VGA_saver (
 
 	//========= SRam side ====================//
 	oSRAM_Addr, // 20 bits
-	oSRAM_Data, // 16 bits
+	// oSRAM_Data, // 16 bits
+	iSRAM_In,
+	oSRAM_Out,
 	oSRAM_CE_N,
 	oSRAM_UB_N,
 	oSRAM_LB_N,
@@ -73,7 +75,9 @@ module VGA_saver (
 
 	//========= SRam side ====================//
 	output [19:0] oSRAM_Addr;
-	inout  [15:0] oSRAM_Data;
+	// inout  [15:0] oSRAM_Data; // change to dual port
+	input  [15:0] iSRAM_In;
+	output [15:0] oSRAM_Out;
 	output oSRAM_CE_N;
 	output oSRAM_UB_N;
 	output oSRAM_LB_N;
@@ -114,7 +118,8 @@ module VGA_saver (
 	assign oState = {1'b0, state_r};
 	assign oSram_buffer = sram_buffer_r;
 
-	assign oSRAM_Data = (state_r == S_WH || state_r == S_WF)? sram_data_out : 16'bz;
+	// assign oSRAM_Data = (state_r == S_WH || state_r == S_WF)? sram_data_out : 16'bz; // change to dual port
+	assign oSRAM_Out = sram_data_out;
 	assign oSRAM_Addr = sram_address_r;
 	assign oSRAM_WE_N = ~(state_r == S_WH || state_r == S_WF);
 	assign oSRAM_OE_N = (state_r == S_WH || state_r == S_WF);
@@ -207,7 +212,7 @@ module VGA_saver (
 				else
 					state_w = S_ACTIVE_R;
 				if(read_0_prefetched_r == 0) begin
-					sram_buffer_w = oSRAM_Data;
+					sram_buffer_w = iSRAM_In;
 					sram_address_w = sram_address_r + 1;
 					read_0_prefetched_w = 1;
 				end
@@ -215,14 +220,14 @@ module VGA_saver (
 			S_RF: begin // got full of pixel(1, 0)
 				// if(iVGA_Read) begin
 				state_w = S_RH;
-				RGB_full_w = {sram_buffer_r[15:8], 2'b00, sram_buffer_r[7:0], 2'b00, oSRAM_Data[15:8], 2'b00};
+				RGB_full_w = {sram_buffer_r[15:8], 2'b00, sram_buffer_r[7:0], 2'b00, iSRAM_In[15:8], 2'b00};
 				sram_address_w  = sram_address_r + 1;
 				// end
 			end
 			S_RH: begin // got full pixel(1, 0) and output to VGA
 				if(iVGA_Read) begin
 					// RGB_full_w = RGB_full_r;
-					sram_buffer_w = oSRAM_Data;
+					sram_buffer_w = iSRAM_In;
 					state_w = S_RF;
 					sram_address_w = sram_address_r + 1;
 				end else if(iVGA_VSYNC_N) begin // back to S_ACTIVE_R here, for even pixel in a row

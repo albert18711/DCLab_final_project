@@ -41,19 +41,19 @@ RGB2LMS step1(
 
 log2 step2_log2L(
 	.i_rst(i_rst),
-	.i_index(wire_L),
+	.i_index(wire_L[15:8]),
 	.o_log2_index(log2_L)
 );
 
 log2 step2_log2M(
 	.i_rst(i_rst),
-	.i_index(wire_M),
+	.i_index(wire_M[15:8]),
 	.o_log2_index(log2_M)
 );
 
 log2 step2_log2S(
 	.i_rst(i_rst),
-	.i_index(wire_S),
+	.i_index(wire_S[15:8]),
 	.o_log2_index(log2_S)
 );
 

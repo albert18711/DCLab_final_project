@@ -63,3 +63,4 @@ color_transform/sqrt_32.vhdl.bak
 *.db_info
 RGB2lab/log2_LMS.v
 RGB2lab/log2_LMS.v
+*.logdb

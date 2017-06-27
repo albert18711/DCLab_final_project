@@ -475,6 +475,8 @@ wire 	[15:0]  VGAsaver_buffer;
 wire 			store_finish;
 wire 			w_VGA_HS;
 wire 			w_VGA_VS;
+wire    [15:0]  VGA_sram_out; 
+wire    [15:0]  VGA_sram_in; 
 
 //power on start
 wire             auto_start;
@@ -531,6 +533,9 @@ assign  LEDR[17] = SRAM_ADDR[19];
 assign  VGA_HS   = w_VGA_HS;
 assign  VGA_VS   = w_VGA_VS;
 
+assign SRAM_DQ   = (VGAsaver_state == 4'd2 || VGAsaver_state == 4'd3)? VGA_sram_out : 16'bz;
+assign VGA_sram_in = (~(VGAsaver_state == 4'd2 || VGAsaver_state == 4'd3))? SRAM_DQ : 0;
+
 //D5M read 
 always@(posedge D5M_PIXLCLK)
 begin
@@ -540,10 +545,12 @@ begin
 end
 
 //auto start when power on
-assign auto_start = ((KEY[0])&&(DLY_RST_3)&&(!DLY_RST_4))? 1'b1:1'b0;
+// assign auto_start = ((KEY[0])&&(DLY_RST_3)&&(!DLY_RST_4))? 1'b1:1'b0;
+assign auto_start = ((~SW[0])&&(DLY_RST_3)&&(!DLY_RST_4))? 1'b1:1'b0;
 //Reset module
 Reset_Delay			u2	(	.iCLK(CLOCK2_50),
-							.iRST(KEY[0]),
+							// .iRST(KEY[0]),
+							.iRST(~SW[0]),
 							.oRST_0(DLY_RST_0),
 							.oRST_1(DLY_RST_1),
 							.oRST_2(DLY_RST_2),
@@ -613,7 +620,8 @@ sdram_pll 			u6	(
 
 //SDRam Read and Write as Frame Buffer
 Sdram_Control	u7	(	//	HOST Side						
-						    .RESET_N(KEY[0]),
+						    // .RESET_N(KEY[0]),
+						    .RESET_N(~SW[0]),
 							.CLK(sdram_ctrl_clk),
 
 							//	FIFO Write Side 1
@@ -697,8 +705,9 @@ Sdram_Control	u7	(	//	HOST Side
 I2C_CCD_Config 		u8	(	//	Host Side
 							.iCLK(CLOCK2_50),
 							.iRST_N(DLY_RST_2),
-							.iEXPOSURE_ADJ(KEY[1]),
-							.iEXPOSURE_DEC_p(SW[0]),
+							.iEXPOSURE_ADJ(KEY[1] | (~SW[14])), // SW[14]: activate KEY[1] as expos level
+							// .iEXPOSURE_DEC_p(SW[0]),
+							.iEXPOSURE_DEC_p(SW[15]),
 							.iZOOM_MODE_SW(SW[16]),
 							//	I2C Side
 							.I2C_SCLK(D5M_SCLK),
@@ -730,14 +739,16 @@ VGA_Controller		u1	(	//	Host Side
 VGA_saver 			vgaSaver (
 							//========= Basic ========================//
 							.iCLK(VGA_CTRL_CLK),    // Clock = VGA's clock
-							.iRST_N(KEY[0]),  // Asynchronous reset active low
+							// .iRST_N(KEY[0]),  // Asynchronous reset active low
+							.iRST_N(~SW[0]),  // Asynchronous reset active low
 
 							//========= Setting ======================//
 							.iCol_MAX(400), // Photo width
 							.iRow_MAX(300), // Photo height, same. since every row would store
 											// half of VGA's size
 							//========= Take Photo ===================//
-							.iTake_frame(SW[3]), // Take this frame if 1
+							// .iTake_frame(SW[3]), // Take this frame if 1
+							.iTake_frame(SW[1]), // Take this frame if 1
 
 							//========= VGA side =====================//
 							.iRGB(RGB_bus),
@@ -756,7 +767,9 @@ VGA_saver 			vgaSaver (
 										   		   // (since need two cycles to get all 30bits RGB)	
 							//========= SRam side ====================//
 							.oSRAM_Addr(SRAM_ADDR), // 20 bits
-							.oSRAM_Data(SRAM_DQ), // 16 bits
+							// .oSRAM_Data(SRAM_DQ), // 16 bits
+							.iSRAM_In(VGA_sram_in),
+							.oSRAM_Out(VGA_sram_out),
 							.oSRAM_CE_N(SRAM_CE_N),
 							.oSRAM_UB_N(SRAM_UB_N),
 							.oSRAM_LB_N(SRAM_LB_N),
@@ -768,6 +781,7 @@ VGA_saver 			vgaSaver (
 							.oSram_buffer(VGAsaver_buffer),
 							.ostore_finish(store_finish)
 						);
+
 
 // debug info
 SevenHexDecoder 	num2hex (

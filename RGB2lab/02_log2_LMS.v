@@ -5,7 +5,7 @@ o_log2_index
 );
 
 input i_rst;
-input [15:0] i_index; // 8+8 B
+input [7:0] i_index; // 8+8 B
 output [15:0] o_log2_index; // 3+13 B
 
 reg [2:0] integ; //整數部分 3bits

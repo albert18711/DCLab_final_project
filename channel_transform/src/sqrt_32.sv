@@ -19,7 +19,7 @@ module sqrt32(clk, rdy, reset, x, y);
    wire [31:0] bit2;
    assign bit2 = 1 << (bitl << 1);
 
-   assign y = (acc == 0)? 1 : acc; // prevent std = 0 in color_transform
+   assign y = (acc == 0)? {8'd1, 8'b0} : acc; // prevent std = 0 in color_transform
 
    // The output is ready when the bitl counter underflows.
    wire rdy = bitl[4];
